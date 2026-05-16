@@ -73,6 +73,7 @@ def download_group(
                 archive_path, status = download_source_archive(paper, date_dir, client)
                 source_dir = source_dir_for(paper, date_dir)
                 extract_archive(archive_path, source_dir)
+                archive_path.unlink(missing_ok=True)
                 results.append(PaperResult(paper, str(archive_path), str(source_dir), status))
             except Exception as exc:
                 result = PaperResult(

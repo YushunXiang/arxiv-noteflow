@@ -115,7 +115,7 @@ def test_download_group_downloads_extracts_and_writes_metadata(tmp_path) -> None
 
     date_dir = tmp_path / "2026-05-15"
     assert results[0].status == "downloaded"
-    assert (date_dir / "archives" / "2605.15157.tar.gz").exists()
+    assert not (date_dir / "archives" / "2605.15157.tar.gz").exists()
     assert (date_dir / "sources" / "2605.15157" / "main.tex").read_text() == "content"
     records = [json.loads(line) for line in (date_dir / "metadata.jsonl").read_text().splitlines()]
     assert records == [
