@@ -1,8 +1,12 @@
+import json
+import tarfile
+from io import BytesIO
+
 import httpx
 import pytest
 
-from daily_arxiv.downloader import DownloadError, archive_path_for, download_source_archive, source_dir_for
-from daily_arxiv.models import Paper
+from daily_arxiv.downloader import DownloadError, archive_path_for, download_group, download_source_archive, source_dir_for
+from daily_arxiv.models import DateGroup, Paper
 
 
 def _paper() -> Paper:
@@ -29,6 +33,16 @@ def _old_style_paper() -> Paper:
         abs_url="https://arxiv.org/abs/math/0309136",
         src_url="https://arxiv.org/src/math/0309136",
     )
+
+
+def _tar_bytes() -> bytes:
+    buffer = BytesIO()
+    with tarfile.open(fileobj=buffer, mode="w:gz") as tar:
+        data = b"content"
+        info = tarfile.TarInfo("main.tex")
+        info.size = len(data)
+        tar.addfile(info, BytesIO(data))
+    return buffer.getvalue()
 
 
 def test_archive_path_for_normalizes_old_style_arxiv_id(tmp_path) -> None:
@@ -85,3 +99,54 @@ def test_download_source_archive_raises_for_http_error(tmp_path) -> None:
         download_source_archive(_paper(), tmp_path, client)
 
     assert "Failed to download https://arxiv.org/src/2605.15157: HTTP 404" in str(exc_info.value)
+
+
+def test_download_group_downloads_extracts_and_writes_metadata(tmp_path) -> None:
+    paper = _paper()
+    group = DateGroup(date="2026-05-15", heading="Fri, 15 May 2026", category="cs.RO", papers=[paper])
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=_tar_bytes())
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+
+    results = download_group(group, tmp_path, client=client, delay=0, keep_going=False)
+
+    date_dir = tmp_path / "2026-05-15"
+    assert results[0].status == "downloaded"
+    assert (date_dir / "archives" / "2605.15157.tar.gz").exists()
+    assert (date_dir / "sources" / "2605.15157" / "main.tex").read_text() == "content"
+    records = [json.loads(line) for line in (date_dir / "metadata.jsonl").read_text().splitlines()]
+    assert records == [
+        {
+            "id": "2605.15157",
+            "title": "Hand-in-the-Loop",
+            "authors": ["Zhuohang Li"],
+            "subjects": ["Robotics (cs.RO)"],
+            "date": "2026-05-15",
+            "category": "cs.RO",
+            "abs_url": "https://arxiv.org/abs/2605.15157",
+            "src_url": "https://arxiv.org/src/2605.15157",
+            "archive_path": str(date_dir / "archives" / "2605.15157.tar.gz"),
+            "source_dir": str(date_dir / "sources" / "2605.15157"),
+            "status": "downloaded",
+            "error": None,
+        }
+    ]
+
+
+def test_download_group_keep_going_records_failure(tmp_path) -> None:
+    group = DateGroup(date="2026-05-15", heading="Fri, 15 May 2026", category="cs.RO", papers=[_paper()])
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(500, content=b"error")
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+
+    results = download_group(group, tmp_path, client=client, delay=0, keep_going=True)
+
+    assert results[0].status == "failed"
+    assert "HTTP 500" in str(results[0].error)
+    records = [json.loads(line) for line in (tmp_path / "2026-05-15" / "metadata.jsonl").read_text().splitlines()]
+    assert records[0]["status"] == "failed"
+    assert "HTTP 500" in records[0]["error"]

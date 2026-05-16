@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 import os
 import time
 
 import httpx
 
+from daily_arxiv.extractor import extract_archive
 from daily_arxiv.models import DateGroup, Paper, PaperResult
 
 USER_AGENT = "daily-arxiv/0.1.0 (+https://arxiv.org)"
@@ -48,3 +50,69 @@ def download_source_archive(paper: Paper, output_dir: Path, client: httpx.Client
 
     os.replace(tmp_path, archive_path)
     return archive_path, "downloaded"
+
+
+def download_group(
+    group: DateGroup,
+    output_root: Path,
+    client: httpx.Client | None = None,
+    delay: float = 3.0,
+    keep_going: bool = False,
+) -> list[PaperResult]:
+    date_dir = Path(output_root) / group.date
+    date_dir.mkdir(parents=True, exist_ok=True)
+    owns_client = client is None
+    if client is None:
+        client = httpx.Client(timeout=30.0)
+
+    results: list[PaperResult] = []
+    try:
+        for index, paper in enumerate(group.papers):
+            try:
+                archive_path, status = download_source_archive(paper, date_dir, client)
+                source_dir = source_dir_for(paper, date_dir)
+                extract_archive(archive_path, source_dir)
+                results.append(PaperResult(paper, str(archive_path), str(source_dir), status))
+            except Exception as exc:
+                result = PaperResult(
+                    paper,
+                    str(archive_path_for(paper, date_dir)),
+                    str(source_dir_for(paper, date_dir)),
+                    "failed",
+                    str(exc),
+                )
+                results.append(result)
+                if not keep_going:
+                    _write_metadata(date_dir / "metadata.jsonl", results)
+                    raise
+            if delay > 0 and index < len(group.papers) - 1:
+                time.sleep(delay)
+    finally:
+        if owns_client:
+            client.close()
+
+    _write_metadata(date_dir / "metadata.jsonl", results)
+    return results
+
+
+def _write_metadata(path: Path, results: list[PaperResult]) -> None:
+    lines = [json.dumps(_metadata_record(result), ensure_ascii=False) for result in results]
+    path.write_text("\n".join(lines) + ("\n" if lines else ""))
+
+
+def _metadata_record(result: PaperResult) -> dict[str, object]:
+    paper = result.paper
+    return {
+        "id": paper.id,
+        "title": paper.title,
+        "authors": paper.authors,
+        "subjects": paper.subjects,
+        "date": paper.date,
+        "category": paper.category,
+        "abs_url": paper.abs_url,
+        "src_url": paper.src_url,
+        "archive_path": result.archive_path,
+        "source_dir": result.source_dir,
+        "status": result.status,
+        "error": result.error,
+    }
