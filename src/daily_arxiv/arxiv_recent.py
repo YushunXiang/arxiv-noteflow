@@ -41,33 +41,34 @@ def fetch_recent_page(category: str, timeout: float = 30.0) -> str:
 
 def parse_recent_page(html: str, category: str) -> list[DateGroup]:
     soup = BeautifulSoup(html, "html.parser")
-    articles = soup.select_one("dl#articles")
-    if articles is None:
+    article_blocks = soup.select("dl#articles")
+    if not article_blocks:
         return []
 
     groups: list[DateGroup] = []
     current_group: DateGroup | None = None
     pending_dt: Tag | None = None
 
-    for child in articles.children:
-        if not isinstance(child, Tag):
-            continue
+    for articles in article_blocks:
+        for child in articles.children:
+            if not isinstance(child, Tag):
+                continue
 
-        if child.name == "h3":
-            heading = _clean_heading(child.get_text(" ", strip=True))
-            current_group = DateGroup(
-                date=_parse_heading_date(heading),
-                heading=heading,
-                category=category,
-                papers=[],
-            )
-            groups.append(current_group)
-            pending_dt = None
-        elif child.name == "dt":
-            pending_dt = child
-        elif child.name == "dd" and current_group is not None and pending_dt is not None:
-            current_group.papers.append(_parse_paper(pending_dt, child, category, current_group.date))
-            pending_dt = None
+            if child.name == "h3":
+                heading = _clean_heading(child.get_text(" ", strip=True))
+                current_group = DateGroup(
+                    date=_parse_heading_date(heading),
+                    heading=heading,
+                    category=category,
+                    papers=[],
+                )
+                groups.append(current_group)
+                pending_dt = None
+            elif child.name == "dt":
+                pending_dt = child
+            elif child.name == "dd" and current_group is not None and pending_dt is not None:
+                current_group.papers.append(_parse_paper(pending_dt, child, category, current_group.date))
+                pending_dt = None
 
     return groups
 
