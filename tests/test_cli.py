@@ -30,11 +30,20 @@ def test_help_shows_commands() -> None:
 
 
 def test_list_prints_selected_group(monkeypatch) -> None:
-    monkeypatch.setattr(cli, "fetch_recent_page", lambda category, timeout: "<html></html>")
-    monkeypatch.setattr(cli, "parse_recent_page", lambda html, category: [_group()])
-    monkeypatch.setattr(cli, "select_date_group", lambda groups, requested_date=None: groups[0])
+    def fake_fetch_recent_page(category, timeout):
+        assert category == "cs.RO"
+        assert timeout == 5.0
+        return "<html></html>"
 
-    result = runner.invoke(cli.app, ["list", "cs.RO"])
+    def fake_select_date_group(groups, requested_date=None):
+        assert requested_date == "2026-05-14"
+        return groups[0]
+
+    monkeypatch.setattr(cli, "fetch_recent_page", fake_fetch_recent_page)
+    monkeypatch.setattr(cli, "parse_recent_page", lambda html, category: [_group()])
+    monkeypatch.setattr(cli, "select_date_group", fake_select_date_group)
+
+    result = runner.invoke(cli.app, ["list", "cs.RO", "--date", "2026-05-14", "--timeout", "5"])
 
     assert result.exit_code == 0
     assert "cs.RO 2026-05-15 Fri, 15 May 2026" in result.output
@@ -43,15 +52,27 @@ def test_list_prints_selected_group(monkeypatch) -> None:
 
 def test_download_invokes_downloader(monkeypatch, tmp_path) -> None:
     group = _group()
-    monkeypatch.setattr(cli, "fetch_recent_page", lambda category, timeout: "<html></html>")
-    monkeypatch.setattr(cli, "parse_recent_page", lambda html, category: [group])
-    monkeypatch.setattr(cli, "select_date_group", lambda groups, requested_date=None: group)
 
-    def fake_download_group(selected_group, output_root, delay, keep_going):
+    def fake_fetch_recent_page(category, timeout):
+        assert category == "cs.RO"
+        assert timeout == 5.0
+        return "<html></html>"
+
+    def fake_select_date_group(groups, requested_date=None):
+        assert groups == [group]
+        assert requested_date == "2026-05-14"
+        return group
+
+    monkeypatch.setattr(cli, "fetch_recent_page", fake_fetch_recent_page)
+    monkeypatch.setattr(cli, "parse_recent_page", lambda html, category: [group])
+    monkeypatch.setattr(cli, "select_date_group", fake_select_date_group)
+
+    def fake_download_group(selected_group, output_root, delay, keep_going, timeout):
         assert selected_group == group
         assert output_root == tmp_path
         assert delay == 0.0
         assert keep_going is True
+        assert timeout == 5.0
         paper = group.papers[0]
         return [PaperResult(paper, str(tmp_path / "archive.tar.gz"), str(tmp_path / "source"), "downloaded")]
 
@@ -59,7 +80,19 @@ def test_download_invokes_downloader(monkeypatch, tmp_path) -> None:
 
     result = runner.invoke(
         cli.app,
-        ["download", "cs.RO", "--output", str(tmp_path), "--delay", "0", "--keep-going"],
+        [
+            "download",
+            "cs.RO",
+            "--date",
+            "2026-05-14",
+            "--output",
+            str(tmp_path),
+            "--delay",
+            "0",
+            "--timeout",
+            "5",
+            "--keep-going",
+        ],
     )
 
     assert result.exit_code == 0
@@ -74,7 +107,7 @@ def test_download_returns_nonzero_when_keep_going_has_failures(monkeypatch, tmp_
     monkeypatch.setattr(cli, "parse_recent_page", lambda html, category: [group])
     monkeypatch.setattr(cli, "select_date_group", lambda groups, requested_date=None: group)
 
-    def fake_download_group(selected_group, output_root, delay, keep_going):
+    def fake_download_group(selected_group, output_root, delay, keep_going, timeout):
         paper = selected_group.papers[0]
         return [PaperResult(paper, str(tmp_path / "archive.tar.gz"), str(tmp_path / "source"), "failed", "HTTP 500")]
 

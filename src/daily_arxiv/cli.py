@@ -34,7 +34,7 @@ def download(
 ) -> None:
     html = fetch_recent_page(category, timeout=timeout)
     group = select_date_group(parse_recent_page(html, category), requested_date=date)
-    results = download_group(group, output, delay=delay, keep_going=keep_going)
+    results = download_group(group, output, delay=delay, keep_going=keep_going, timeout=timeout)
     downloaded = sum(1 for result in results if result.status == "downloaded")
     skipped = sum(1 for result in results if result.status == "skipped")
     failed = sum(1 for result in results if result.status == "failed")

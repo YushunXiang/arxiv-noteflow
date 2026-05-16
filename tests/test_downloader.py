@@ -5,6 +5,7 @@ from io import BytesIO
 import httpx
 import pytest
 
+from daily_arxiv import downloader
 from daily_arxiv.downloader import DownloadError, archive_path_for, download_group, download_source_archive, source_dir_for
 from daily_arxiv.models import DateGroup, Paper
 
@@ -150,3 +151,24 @@ def test_download_group_keep_going_records_failure(tmp_path) -> None:
     records = [json.loads(line) for line in (tmp_path / "2026-05-15" / "metadata.jsonl").read_text().splitlines()]
     assert records[0]["status"] == "failed"
     assert "HTTP 500" in records[0]["error"]
+
+
+def test_download_group_uses_timeout_for_owned_client(monkeypatch, tmp_path) -> None:
+    seen_timeouts: list[float] = []
+    closed = False
+
+    class FakeClient:
+        def __init__(self, timeout: float) -> None:
+            seen_timeouts.append(timeout)
+
+        def close(self) -> None:
+            nonlocal closed
+            closed = True
+
+    monkeypatch.setattr(downloader.httpx, "Client", FakeClient)
+    group = DateGroup(date="2026-05-15", heading="Fri, 15 May 2026", category="cs.RO", papers=[])
+
+    download_group(group, tmp_path, delay=0, timeout=5.0)
+
+    assert seen_timeouts == [5.0]
+    assert closed is True

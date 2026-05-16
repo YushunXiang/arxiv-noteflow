@@ -58,12 +58,13 @@ def download_group(
     client: httpx.Client | None = None,
     delay: float = 3.0,
     keep_going: bool = False,
+    timeout: float = 30.0,
 ) -> list[PaperResult]:
     date_dir = Path(output_root) / group.date
     date_dir.mkdir(parents=True, exist_ok=True)
     owns_client = client is None
     if client is None:
-        client = httpx.Client(timeout=30.0)
+        client = httpx.Client(timeout=timeout)
 
     results: list[PaperResult] = []
     try:
