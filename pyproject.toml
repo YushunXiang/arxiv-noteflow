@@ -1,0 +1,23 @@
+[project]
+name = "daily-arxiv"
+version = "0.1.0"
+description = "Download LaTeX source archives from arXiv recent category pages."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "beautifulsoup4>=4.12.3",
+    "httpx>=0.27.0",
+    "typer>=0.12.5",
+]
+
+[project.scripts]
+daily-arxiv = "daily_arxiv.cli:app"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
