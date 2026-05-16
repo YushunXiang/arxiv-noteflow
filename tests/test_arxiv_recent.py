@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from daily_arxiv.arxiv_recent import DateGroupNotFoundError, parse_recent_page, select_date_group
+from daily_arxiv.arxiv_recent import DateGroupNotFoundError, RecentPageError, parse_recent_page, select_date_group
 
 
 FIXTURE = Path(__file__).parent / "fixtures" / "cs_ro_recent.html"
@@ -19,6 +19,17 @@ def test_parse_recent_page_groups_papers_by_date() -> None:
     assert groups[0].papers[0].subjects == ["Robotics (cs.RO)", "Machine Learning (cs.LG)"]
     assert groups[0].papers[0].abs_url == "https://arxiv.org/abs/2605.15157"
     assert groups[0].papers[0].src_url == "https://arxiv.org/src/2605.15157"
+
+
+def test_parse_recent_page_wraps_malformed_heading_date() -> None:
+    html = '<dl id="articles"><h3>Recent submissions for Friday-ish</h3></dl>'
+
+    with pytest.raises(RecentPageError) as exc_info:
+        parse_recent_page(html, category="cs.RO")
+
+    message = str(exc_info.value)
+    assert "Failed to parse cs.RO recent page heading date" in message
+    assert "Recent submissions for Friday-ish" in message
 
 
 def test_select_date_group_defaults_to_first_group() -> None:

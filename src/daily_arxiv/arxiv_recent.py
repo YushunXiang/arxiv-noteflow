@@ -56,8 +56,14 @@ def parse_recent_page(html: str, category: str) -> list[DateGroup]:
 
             if child.name == "h3":
                 heading = _clean_heading(child.get_text(" ", strip=True))
+                try:
+                    date = _parse_heading_date(heading)
+                except ValueError as exc:
+                    raise RecentPageError(
+                        f"Failed to parse {category} recent page heading date: {heading}"
+                    ) from exc
                 current_group = DateGroup(
-                    date=_parse_heading_date(heading),
+                    date=date,
                     heading=heading,
                     category=category,
                     papers=[],
