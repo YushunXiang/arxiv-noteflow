@@ -15,12 +15,16 @@ class DownloadError(RuntimeError):
     pass
 
 
+def _safe_paper_id(paper: Paper) -> str:
+    return paper.id.replace("/", "-")
+
+
 def archive_path_for(paper: Paper, output_dir: Path) -> Path:
-    return Path(output_dir) / "archives" / f"{paper.id}.tar.gz"
+    return Path(output_dir) / "archives" / f"{_safe_paper_id(paper)}.tar.gz"
 
 
 def source_dir_for(paper: Paper, output_dir: Path) -> Path:
-    return Path(output_dir) / "sources" / paper.id
+    return Path(output_dir) / "sources" / _safe_paper_id(paper)
 
 
 def download_source_archive(paper: Paper, output_dir: Path, client: httpx.Client) -> tuple[Path, str]:

@@ -1,7 +1,7 @@
 import httpx
 import pytest
 
-from daily_arxiv.downloader import DownloadError, download_source_archive
+from daily_arxiv.downloader import DownloadError, archive_path_for, download_source_archive, source_dir_for
 from daily_arxiv.models import Paper
 
 
@@ -16,6 +16,27 @@ def _paper() -> Paper:
         abs_url="https://arxiv.org/abs/2605.15157",
         src_url="https://arxiv.org/src/2605.15157",
     )
+
+
+def _old_style_paper() -> Paper:
+    return Paper(
+        id="math/0309136",
+        title="Old-Style Arxiv ID",
+        authors=["Example Author"],
+        subjects=["Mathematics"],
+        category="math",
+        date="2003-09-13",
+        abs_url="https://arxiv.org/abs/math/0309136",
+        src_url="https://arxiv.org/src/math/0309136",
+    )
+
+
+def test_archive_path_for_normalizes_old_style_arxiv_id(tmp_path) -> None:
+    assert archive_path_for(_old_style_paper(), tmp_path) == tmp_path / "archives" / "math-0309136.tar.gz"
+
+
+def test_source_dir_for_normalizes_old_style_arxiv_id(tmp_path) -> None:
+    assert source_dir_for(_old_style_paper(), tmp_path) == tmp_path / "sources" / "math-0309136"
 
 
 def test_download_source_archive_writes_temp_then_final_file(tmp_path) -> None:
