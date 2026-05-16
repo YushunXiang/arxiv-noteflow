@@ -1,6 +1,8 @@
 from typer.testing import CliRunner
 
 from daily_arxiv import cli
+from daily_arxiv.arxiv_recent import DateGroupNotFoundError
+from daily_arxiv.downloader import DownloadError
 from daily_arxiv.models import DateGroup, Paper, PaperResult
 
 
@@ -117,3 +119,68 @@ def test_download_returns_nonzero_when_keep_going_has_failures(monkeypatch, tmp_
 
     assert result.exit_code == 1
     assert "Failed: 1" in result.output
+
+
+def test_list_rejects_non_padded_date_before_fetch(monkeypatch) -> None:
+    def fake_fetch_recent_page(category, timeout):
+        raise AssertionError("date validation should happen before fetching")
+
+    monkeypatch.setattr(cli, "fetch_recent_page", fake_fetch_recent_page)
+
+    result = runner.invoke(cli.app, ["list", "cs.RO", "--date", "2026-5-14"])
+
+    assert result.exit_code == 1
+    assert "YYYY-MM-DD" in result.stderr
+    assert "Traceback" not in result.output
+
+
+def test_list_prints_concise_date_group_error(monkeypatch) -> None:
+    monkeypatch.setattr(cli, "fetch_recent_page", lambda category, timeout: "<html></html>")
+    monkeypatch.setattr(cli, "parse_recent_page", lambda html, category: [_group()])
+
+    def fake_select_date_group(groups, requested_date=None):
+        raise DateGroupNotFoundError("No entries found for 2026-05-13 in cs.RO recent page.")
+
+    monkeypatch.setattr(cli, "select_date_group", fake_select_date_group)
+
+    result = runner.invoke(cli.app, ["list", "cs.RO", "--date", "2026-05-13"])
+
+    assert result.exit_code == 1
+    assert "No entries found for 2026-05-13 in cs.RO recent page." in result.stderr
+    assert "Traceback" not in result.output
+
+
+def test_download_prints_concise_download_error(monkeypatch, tmp_path) -> None:
+    group = _group()
+    monkeypatch.setattr(cli, "fetch_recent_page", lambda category, timeout: "<html></html>")
+    monkeypatch.setattr(cli, "parse_recent_page", lambda html, category: [group])
+    monkeypatch.setattr(cli, "select_date_group", lambda groups, requested_date=None: group)
+
+    def fake_download_group(selected_group, output_root, delay, keep_going, timeout):
+        raise DownloadError("Failed to download https://arxiv.org/src/2605.15157: HTTP 503")
+
+    monkeypatch.setattr(cli, "download_group", fake_download_group)
+
+    result = runner.invoke(cli.app, ["download", "cs.RO", "--output", str(tmp_path)])
+
+    assert result.exit_code == 1
+    assert "Failed to download https://arxiv.org/src/2605.15157: HTTP 503" in result.stderr
+    assert "Traceback" not in result.output
+
+
+def test_download_prints_concise_runtime_error(monkeypatch, tmp_path) -> None:
+    group = _group()
+    monkeypatch.setattr(cli, "fetch_recent_page", lambda category, timeout: "<html></html>")
+    monkeypatch.setattr(cli, "parse_recent_page", lambda html, category: [group])
+    monkeypatch.setattr(cli, "select_date_group", lambda groups, requested_date=None: group)
+
+    def fake_download_group(selected_group, output_root, delay, keep_going, timeout):
+        raise RuntimeError("extract failed")
+
+    monkeypatch.setattr(cli, "download_group", fake_download_group)
+
+    result = runner.invoke(cli.app, ["download", "cs.RO", "--output", str(tmp_path)])
+
+    assert result.exit_code == 1
+    assert "extract failed" in result.stderr
+    assert "Traceback" not in result.output
