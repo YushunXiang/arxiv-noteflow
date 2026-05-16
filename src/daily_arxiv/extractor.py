@@ -21,7 +21,9 @@ def extract_archive(archive_path: Path, target_dir: Path) -> Path:
             member_path = (target_root / member.name).resolve()
             if not _is_relative_to(member_path, target_root):
                 raise UnsafeArchiveError(f"Archive member escapes target directory: {member.name}")
-        tar.extractall(target_root)
+            if not (member.isfile() or member.isdir()):
+                raise UnsafeArchiveError(f"Archive member has unsafe type: {member.name}")
+        tar.extractall(target_root, filter="data")
     return target_dir
 
 

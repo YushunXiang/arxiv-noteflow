@@ -47,3 +47,26 @@ def test_extract_archive_rejects_path_traversal(tmp_path) -> None:
         extract_archive(archive, target)
 
     assert not (tmp_path / "escape.tex").exists()
+
+
+def test_extract_archive_rejects_symlink_escape(tmp_path) -> None:
+    archive = tmp_path / "bad-link.tar.gz"
+    target = tmp_path / "sources" / "2605.15157"
+    outside = tmp_path / "outside"
+    outside.mkdir()
+
+    with tarfile.open(archive, "w:gz") as tar:
+        link = tarfile.TarInfo("link")
+        link.type = tarfile.SYMTYPE
+        link.linkname = str(outside)
+        tar.addfile(link)
+
+        data = b"bad"
+        file_info = tarfile.TarInfo("link/evil.tex")
+        file_info.size = len(data)
+        tar.addfile(file_info, io.BytesIO(data))
+
+    with pytest.raises(UnsafeArchiveError):
+        extract_archive(archive, target)
+
+    assert not (outside / "evil.tex").exists()
