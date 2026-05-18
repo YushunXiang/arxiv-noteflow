@@ -1,13 +1,13 @@
 ---
 name: read-daily-arxiv
-description: Download the latest papers from arXiv recent pages with the local daily-arxiv Python CLI, then read each downloaded LaTeX source project and write one Obsidian-compatible Markdown note per paper. Use when asked to read today's, daily, latest, or date-specific arXiv papers; batch-digest arXiv recent papers; create per-paper Markdown notes; turn daily-arxiv downloads into Chinese research notes; or sync generated paper Markdown notes to a Lark/Feishu Drive folder.
+description: Download the latest papers from arXiv recent pages with the local arxiv-noteflow Python CLI, then read each downloaded LaTeX source project and write one Obsidian-compatible Markdown note per paper. Use when asked to read today's, daily, latest, or date-specific arXiv papers; batch-digest arXiv recent papers; create per-paper Markdown notes; turn arxiv-noteflow downloads into Chinese research notes; or sync generated paper Markdown notes to a Lark/Feishu Drive folder.
 ---
 
 # Read Daily arXiv
 
 ## Overview
 
-Use this skill to run a daily arXiv reading batch: fetch recent papers with the `daily-arxiv` repository CLI, inspect each extracted source tree, and write one Markdown note per paper. The YAML frontmatter may keep structured source metadata in its original language, but all generated content after the closing frontmatter `---` must be written in Simplified Chinese (`zh-CN`) unless the user explicitly requests another language.
+Use this skill to run a daily arXiv reading batch: fetch recent papers with the `arxiv-noteflow` repository CLI, inspect each extracted source tree, and write one Markdown note per paper. The YAML frontmatter may keep structured source metadata in its original language, but all generated content after the closing frontmatter `---` must be written in Simplified Chinese (`zh-CN`) unless the user explicitly requests another language.
 
 The expected local repository is `/Users/ysxiang/Documents/daily-arxiv` when no repo path is given.
 
@@ -24,7 +24,7 @@ The expected local repository is `/Users/ysxiang/Documents/daily-arxiv` when no 
 2. Prepare the batch manifest:
    - Run `scripts/prepare_daily_batch.py` from this skill to call the repo CLI and produce a manifest.
    - Use `--skip-download` only when the source archives are already downloaded and extracted.
-   - If the helper script is not suitable, run `uv run daily-arxiv download <category> --output downloads --keep-going` directly in the repo and read `downloads/<date>/metadata.jsonl`.
+   - If the helper script is not suitable, run `uv run arxiv-noteflow download <category> --output downloads --keep-going` directly in the repo and read `downloads/<date>/metadata.jsonl`.
 3. Read papers with multi-agent parallelism:
    - Build the readable paper list from manifest entries whose status is not `failed`.
    - If there is only one readable paper, the current agent may read and write it directly. If there are two or more readable papers, dispatch parallel worker agents by default.
@@ -225,7 +225,7 @@ uv run python scripts/send_focus_summary_to_feishu.py \
 
 ## Resources
 
-- `scripts/prepare_daily_batch.py`: Calls the local daily-arxiv CLI when needed and emits a deterministic manifest for the reading batch.
+- `scripts/prepare_daily_batch.py`: Calls the local arxiv-noteflow CLI when needed and emits a deterministic manifest for the reading batch.
 - `scripts/sync_lark_notes.py`: Imports generated Markdown notes to Lark Drive and optionally mirrors each paper's `assets/` folder with `--sync-assets`.
 - Repo-root `scripts/send_focus_summary_to_feishu.py`: Reads generated Markdown notes, ranks Long-horizon/Egocentric/UMI/VLA papers, attaches arXiv and Feishu document links from Lark import reports, and sends a Chinese summary to a Feishu webhook.
 - `references/paper-note-spec.md`: Detailed TeX-first single-paper note specification.

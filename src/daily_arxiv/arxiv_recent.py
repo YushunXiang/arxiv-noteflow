@@ -11,7 +11,7 @@ from daily_arxiv.models import DateGroup, Paper
 
 
 ARXIV_BASE_URL = "https://arxiv.org"
-USER_AGENT = "daily-arxiv/0.1.0 (+https://arxiv.org)"
+USER_AGENT = "arxiv-noteflow/0.1.0 (+https://arxiv.org)"
 
 
 class RecentPageError(Exception):

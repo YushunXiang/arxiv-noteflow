@@ -8,8 +8,8 @@ This is a Python 3.12 package for downloading and extracting LaTeX source archiv
 
 - `uv sync`: create or update the local virtual environment from `pyproject.toml` and `uv.lock`.
 - `uv run pytest`: run the full test suite configured for `tests/`.
-- `uv run daily-arxiv list cs.RO`: list papers from the latest visible arXiv `cs.RO` recent date group.
-- `uv run daily-arxiv download cs.RO --output downloads`: download and extract source archives into `downloads/`.
+- `uv run arxiv-noteflow list cs.RO`: list papers from the latest visible arXiv `cs.RO` recent date group.
+- `uv run arxiv-noteflow download cs.RO --output downloads`: download and extract source archives into `downloads/`.
 
 Use `--date YYYY-MM-DD`, `--timeout`, `--delay`, and `--keep-going` when exercising CLI edge cases.
 

@@ -1,10 +1,10 @@
-# daily-arxiv
+# arxiv-noteflow
 
 [中文文档](README.zh-CN.md)
 
 Download and extract LaTeX source archives from arXiv category recent pages.
 
-`daily-arxiv` is a small Python 3.12 CLI for repeatable daily paper intake. It reads
+`arxiv-noteflow` is a small Python 3.12 CLI for repeatable daily paper intake. It reads
 `https://arxiv.org/list/<category>/recent`, selects a visible date group, downloads
 each paper source archive from `https://arxiv.org/src/<id>`, safely extracts it, and
 writes deterministic metadata under `downloads/<date>/`.
@@ -47,41 +47,44 @@ uv run pytest
 
 ## CLI Usage
 
+The primary CLI command is `arxiv-noteflow`. The older `daily-arxiv` command is
+kept as a compatibility alias.
+
 List the latest visible date group:
 
 ```bash
-uv run daily-arxiv list cs.RO
+uv run arxiv-noteflow list cs.RO
 ```
 
 List a specific visible date group:
 
 ```bash
-uv run daily-arxiv list cs.RO --date 2026-05-15
+uv run arxiv-noteflow list cs.RO --date 2026-05-15
 ```
 
 Download and extract source archives:
 
 ```bash
-uv run daily-arxiv download cs.RO
-uv run daily-arxiv download cs.RO --date 2026-05-15
+uv run arxiv-noteflow download cs.RO
+uv run arxiv-noteflow download cs.RO --date 2026-05-15
 ```
 
 Use a custom output directory:
 
 ```bash
-uv run daily-arxiv download cs.RO --output downloads
+uv run arxiv-noteflow download cs.RO --output downloads
 ```
 
 Continue after individual paper failures:
 
 ```bash
-uv run daily-arxiv download cs.RO --keep-going
+uv run arxiv-noteflow download cs.RO --keep-going
 ```
 
 Useful network controls:
 
 ```bash
-uv run daily-arxiv download cs.RO --timeout 30 --delay 1.0 --keep-going
+uv run arxiv-noteflow download cs.RO --timeout 30 --delay 1.0 --keep-going
 ```
 
 `--date` only selects dates visible on the current arXiv recent page. It does not

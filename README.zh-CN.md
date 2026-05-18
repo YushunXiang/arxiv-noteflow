@@ -1,10 +1,10 @@
-# daily-arxiv
+# arxiv-noteflow
 
 [English](README.md)
 
 从 arXiv 分类 recent 页面下载并解压 LaTeX 源码归档。
 
-`daily-arxiv` 是一个面向每日论文处理流程的小型 Python 3.12 CLI。它读取
+`arxiv-noteflow` 是一个面向每日论文处理流程的小型 Python 3.12 CLI。它读取
 `https://arxiv.org/list/<category>/recent`，选择页面中可见的日期分组，
 从 `https://arxiv.org/src/<id>` 下载每篇论文的源码归档，安全解压，并在
 `downloads/<date>/` 下写入确定性的元数据。
@@ -46,41 +46,43 @@ uv run pytest
 
 ## CLI 用法
 
+主 CLI 命令是 `arxiv-noteflow`。旧的 `daily-arxiv` 命令会保留为兼容别名。
+
 列出最新可见日期分组：
 
 ```bash
-uv run daily-arxiv list cs.RO
+uv run arxiv-noteflow list cs.RO
 ```
 
 列出指定可见日期分组：
 
 ```bash
-uv run daily-arxiv list cs.RO --date 2026-05-15
+uv run arxiv-noteflow list cs.RO --date 2026-05-15
 ```
 
 下载并解压源码归档：
 
 ```bash
-uv run daily-arxiv download cs.RO
-uv run daily-arxiv download cs.RO --date 2026-05-15
+uv run arxiv-noteflow download cs.RO
+uv run arxiv-noteflow download cs.RO --date 2026-05-15
 ```
 
 使用自定义输出目录：
 
 ```bash
-uv run daily-arxiv download cs.RO --output downloads
+uv run arxiv-noteflow download cs.RO --output downloads
 ```
 
 单篇论文失败后继续处理：
 
 ```bash
-uv run daily-arxiv download cs.RO --keep-going
+uv run arxiv-noteflow download cs.RO --keep-going
 ```
 
 常用网络控制参数：
 
 ```bash
-uv run daily-arxiv download cs.RO --timeout 30 --delay 1.0 --keep-going
+uv run arxiv-noteflow download cs.RO --timeout 30 --delay 1.0 --keep-going
 ```
 
 `--date` 只会选择当前 arXiv recent 页面上可见的日期，不会搜索历史归档。

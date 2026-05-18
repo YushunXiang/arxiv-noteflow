@@ -14,15 +14,15 @@ DATE_LINE_RE = re.compile(r"^\S+\s+(\d{4}-\d{2}-\d{2})\s+")
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Prepare a daily-arxiv reading manifest.")
-    parser.add_argument("--repo", default=".", help="Path to the daily-arxiv repository.")
+    parser = argparse.ArgumentParser(description="Prepare an arxiv-noteflow reading manifest.")
+    parser.add_argument("--repo", default=".", help="Path to the arxiv-noteflow repository.")
     parser.add_argument("--category", default="cs.RO", help="arXiv recent category.")
     parser.add_argument("--date", help="Visible arXiv recent date in YYYY-MM-DD format.")
-    parser.add_argument("--download-output", default="downloads", help="daily-arxiv download output root.")
+    parser.add_argument("--download-output", default="downloads", help="arxiv-noteflow download output root.")
     parser.add_argument("--notes-output", default="papers", help="Root directory for generated notes.")
-    parser.add_argument("--manifest", help="Manifest path. Defaults to <date-dir>/daily-arxiv-manifest.json.")
-    parser.add_argument("--delay", type=float, default=3.0, help="Delay passed to daily-arxiv download.")
-    parser.add_argument("--timeout", type=float, default=30.0, help="HTTP timeout passed to daily-arxiv download.")
+    parser.add_argument("--manifest", help="Manifest path. Defaults to <date-dir>/arxiv-noteflow-manifest.json.")
+    parser.add_argument("--delay", type=float, default=3.0, help="Delay passed to arxiv-noteflow download.")
+    parser.add_argument("--timeout", type=float, default=30.0, help="HTTP timeout passed to arxiv-noteflow download.")
     parser.add_argument("--keep-going", action="store_true", help="Continue after individual paper failures.")
     parser.add_argument("--skip-download", action="store_true", help="Use an existing downloads/<date>/metadata.jsonl.")
     parser.add_argument("--max-papers", type=int, help="Limit manifest papers after reading metadata.")
@@ -32,7 +32,7 @@ def parse_args() -> argparse.Namespace:
 def resolve_repo(path: str) -> Path:
     repo = Path(path).expanduser().resolve()
     if not (repo / "src" / "daily_arxiv" / "cli.py").exists():
-        raise SystemExit(f"daily-arxiv repo not found or missing src/daily_arxiv/cli.py: {repo}")
+        raise SystemExit(f"arxiv-noteflow repo not found or missing src/daily_arxiv/cli.py: {repo}")
     return repo
 
 
@@ -47,7 +47,7 @@ def run_download(args: argparse.Namespace, repo: Path, output_root: Path) -> str
     cmd = [
         "uv",
         "run",
-        "daily-arxiv",
+        "arxiv-noteflow",
         "download",
         args.category,
         "--output",
@@ -69,7 +69,7 @@ def run_download(args: argparse.Namespace, repo: Path, output_root: Path) -> str
         print(completed.stderr, file=sys.stderr, end="")
 
     if completed.returncode != 0:
-        print(f"daily-arxiv exited with status {completed.returncode}; trying to use metadata if available.", file=sys.stderr)
+        print(f"arxiv-noteflow exited with status {completed.returncode}; trying to use metadata if available.", file=sys.stderr)
     return completed.stdout + "\n" + completed.stderr
 
 
@@ -204,7 +204,7 @@ def main() -> int:
         raise SystemExit(f"metadata.jsonl not found: {metadata_path}")
 
     manifest = build_manifest(args, repo, output_root, notes_root, date_dir, metadata_path)
-    manifest_path = Path(args.manifest).expanduser() if args.manifest else date_dir / "daily-arxiv-manifest.json"
+    manifest_path = Path(args.manifest).expanduser() if args.manifest else date_dir / "arxiv-noteflow-manifest.json"
     if not manifest_path.is_absolute():
         manifest_path = repo / manifest_path
     manifest_path.parent.mkdir(parents=True, exist_ok=True)

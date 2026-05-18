@@ -306,8 +306,8 @@ def sync_date(
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Sync daily-arxiv Markdown notes to Lark Drive.")
-    parser.add_argument("--repo", default=".", type=Path, help="Path to the daily-arxiv repository.")
+    parser = argparse.ArgumentParser(description="Sync arxiv-noteflow Markdown notes to Lark Drive.")
+    parser.add_argument("--repo", default=".", type=Path, help="Path to the arxiv-noteflow repository.")
     parser.add_argument("--date", required=True, help="Local papers date folder, e.g. 2026-05-18.")
     parser.add_argument("--papers-root", default=Path("papers"), type=Path)
     parser.add_argument(

@@ -1,5 +1,5 @@
 [project]
-name = "daily-arxiv"
+name = "arxiv-noteflow"
 version = "0.1.0"
 description = "Download LaTeX source archives from arXiv recent category pages."
 readme = "README.md"
@@ -11,6 +11,7 @@ dependencies = [
 ]
 
 [project.scripts]
+arxiv-noteflow = "daily_arxiv.cli:app"
 daily-arxiv = "daily_arxiv.cli:app"
 
 [dependency-groups]
@@ -21,6 +22,9 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/daily_arxiv"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
