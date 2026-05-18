@@ -128,6 +128,38 @@ FEISHU_WEBHOOK_URL=
 
 不要提交 `.env`。该文件已被 `.gitignore` 忽略。
 
+## Codex Skill
+
+本仓库包含一个本地 Codex skill：
+[`.codex/skills/read-daily-arxiv/`](.codex/skills/read-daily-arxiv/)。
+它面向端到端的每日论文阅读流程，而不只是原始 CLI 下载。
+
+当你希望 Codex 完成以下任务时，使用这个 skill：
+
+- 下载最新或指定日期的 arXiv recent 页面论文
+- 检查每篇论文解压后的 LaTeX 源码树
+- 为每篇论文在 `papers/<date>/` 下写一份中文 Markdown 笔记
+- 对多篇论文批量阅读时使用并行 agents
+- 可选：把生成的 Markdown 笔记同步到 Lark/飞书云空间
+- 可选：通过飞书 webhook 发送聚焦摘要
+
+Codex 调用示例：
+
+```text
+Use $read-daily-arxiv to download and read today's cs.RO papers.
+```
+
+```text
+Use $read-daily-arxiv to read cs.RO papers for 2026-05-18, sync the generated notes to Lark, and send the Feishu webhook summary.
+```
+
+这个 skill 使用 `arxiv-noteflow` 完成下载，通过 `prepare_daily_batch.py`
+写出确定性的阅读 manifest，并按照
+[`references/paper-note-spec.md`](.codex/skills/read-daily-arxiv/references/paper-note-spec.md)
+控制笔记结构和质量检查。如果需要同步到 Lark/飞书或发送 webhook，请在 `.env`
+中配置 `LARK_PARENT_FOLDER_TOKEN` 和 `FEISHU_WEBHOOK_URL`，并确保 `lark-cli`
+已完成认证。
+
 ## 每日阅读工作流
 
 为最新的 `cs.RO` recent 页面分组准备阅读 manifest：

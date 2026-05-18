@@ -132,6 +132,39 @@ FEISHU_WEBHOOK_URL=
 
 Do not commit `.env`. It is ignored by `.gitignore`.
 
+## Codex Skill
+
+This repository includes a local Codex skill at
+[`.codex/skills/read-daily-arxiv/`](.codex/skills/read-daily-arxiv/).
+It is meant for end-to-end daily paper reading workflows rather than raw CLI
+downloads.
+
+Use the skill when you want Codex to:
+
+- download the latest or date-specific arXiv recent-page papers
+- inspect each extracted LaTeX source tree
+- write one Chinese Markdown note per paper under `papers/<date>/`
+- use parallel agents for multi-paper batches
+- optionally sync generated Markdown notes to Lark/Feishu Drive
+- optionally send a focused Feishu webhook summary
+
+Example Codex prompts:
+
+```text
+Use $read-daily-arxiv to download and read today's cs.RO papers.
+```
+
+```text
+Use $read-daily-arxiv to read cs.RO papers for 2026-05-18, sync the generated notes to Lark, and send the Feishu webhook summary.
+```
+
+The skill uses `arxiv-noteflow` for downloads, writes a deterministic reading
+manifest with `prepare_daily_batch.py`, and follows
+[`references/paper-note-spec.md`](.codex/skills/read-daily-arxiv/references/paper-note-spec.md)
+for note structure and quality checks. For Lark/Feishu sync, configure
+`LARK_PARENT_FOLDER_TOKEN` and `FEISHU_WEBHOOK_URL` in `.env` and make sure
+`lark-cli` is authenticated.
+
 ## Daily Reading Workflow
 
 Prepare a reading manifest for the latest `cs.RO` recent-page group:
