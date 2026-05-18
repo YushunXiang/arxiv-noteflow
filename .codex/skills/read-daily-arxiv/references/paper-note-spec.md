@@ -64,11 +64,11 @@ For each useful experimental table:
 
 Normalize these tables when the information exists:
 
-| Table | Columns |
+| 表格类型 | 列 |
 | --- | --- |
-| 数据集 / Benchmarks | Dataset, Task, Split, Metric(s), Notes |
-| 主结果 / Main Results | Dataset, Metric, Baseline, Ours, Delta |
-| 训练 / Compute | Item, Value |
+| 数据集与基准 | 数据集, 任务, 划分, 指标, 备注 |
+| 主要结果 | 数据集, 指标, 基线, 本文方法, 差值 |
+| 训练与计算 | 项目, 数值 |
 
 Only include numeric values present in source text or tables.
 
@@ -148,36 +148,38 @@ pipeline_source: "..."
 ---
 ```
 
-Use this exact body section order with Simplified Chinese headings:
+Use this exact body section order with Simplified Chinese headings. Do not leave English template labels in headings:
 
-1. `## TL;DR`
+1. `## 简短总结`
    - 3-6 bullets.
 2. `## 核心贡献`
 3. `## 方法`
    - Prefer compact pseudocode or process bullets.
-4. `## 流程图（Pipeline Figure）`
+4. `## 流程图`
    - If present: `![[assets/pipeline_XXXX.XXXXX.png]]`
-   - Include `图注：...` and `来源：...`.
+   - Include `图注：...` and `来源：...`, both written in Chinese. Translate source captions instead of pasting them verbatim; keep the original figure label or file path only as an identifier when useful.
 5. `## 实验`
    - Include dataset, main result, and ablation/analysis tables when present.
 6. `## 局限性与注意事项`
 7. `## 可落地实现想法`
    - 2-5 practical ideas.
-8. `## 开放问题 / 后续跟进`
+8. `## 开放问题与后续跟进`
 9. `## 引用`
    - BibTeX if available, otherwise an arXiv citation line.
 
 ## Language Policy
 
-- Write note body in Simplified Chinese by default.
+- YAML frontmatter is the only default language exception. Write all content after the closing frontmatter `---` in Simplified Chinese by default, including headings, bullets, prose, table labels, figure-caption explanations, and source notes.
 - Keep proper nouns, dataset names, metric names, model names, code identifiers, formulas, and numeric values in original form when needed.
 - On first mention of a technical term, use Chinese plus original term when helpful, such as `对比学习（contrastive learning）`.
-- If source text is ambiguous, include a short source snippet and mark `原文含糊`.
+- If source text is ambiguous, include a short quoted source snippet only when needed, prefix it with `原文：`, and explain the ambiguity in Chinese.
+- Do not leave English template labels such as `TL;DR`, `Pipeline Figure`, `Benchmarks`, `Main Results`, `Dataset`, `Task`, `Metric`, `Notes`, `Baseline`, `Ours`, `Delta`, `Item`, or `Value` in the body.
 
 ## Quality Checks
 
 - Verify `note_path` exists and is non-empty.
 - Verify frontmatter parses visually as YAML and includes arXiv id and URLs.
+- Verify all Markdown content after the closing frontmatter `---` follows the language policy above.
 - Verify every reported metric/value is backed by source text or a table.
 - Verify asset links are relative to the note and point to existing files.
 - Summarize any missing source, failed figure extraction, or skipped paper in the final response.
