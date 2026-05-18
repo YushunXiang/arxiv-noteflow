@@ -1,5 +1,7 @@
 # daily-arxiv
 
+[中文文档](README.zh-CN.md)
+
 Download and extract LaTeX source archives from arXiv category recent pages.
 
 `daily-arxiv` is a small Python 3.12 CLI for repeatable daily paper intake. It reads
