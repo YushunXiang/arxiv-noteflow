@@ -225,3 +225,45 @@ def test_main_loads_webhook_from_dotenv(
     assert result == 0
     assert sent
     assert sent[0][0] == "https://example.test/from-dotenv"
+
+
+def test_main_sends_to_each_webhook_url(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    module = load_script()
+    date_dir = tmp_path / "papers" / "2026-05-18"
+    date_dir.mkdir(parents=True)
+    write_note(
+        date_dir,
+        "vla",
+        "Vision-Language-Action Policy",
+        "2605.10000",
+        "## 简短总结\n- VLA policy for robot manipulation.\n",
+    )
+    sent: list[tuple[str, list[str]]] = []
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("FEISHU_WEBHOOK_URL", raising=False)
+    monkeypatch.setattr(
+        module,
+        "send_feishu_chunks",
+        lambda webhook_url, chunks, **_kwargs: sent.append((webhook_url, chunks)),
+    )
+
+    result = module.main(
+        [
+            "--date",
+            "2026-05-18",
+            "--webhook-url",
+            "https://example.test/first",
+            "--webhook-url",
+            "https://example.test/second",
+            "--max-chars",
+            "18000",
+        ]
+    )
+
+    assert result == 0
+    assert [url for url, _chunks in sent] == [
+        "https://example.test/first",
+        "https://example.test/second",
+    ]

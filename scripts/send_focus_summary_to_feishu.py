@@ -401,13 +401,40 @@ def send_feishu_chunks(
                 sleep_func(send_interval * (attempt + 2))
 
 
+def split_webhook_urls(values: Iterable[str] | None) -> list[str]:
+    urls: list[str] = []
+    for value in values or []:
+        urls.extend(part.strip() for part in value.split(",") if part.strip())
+    return urls
+
+
+def resolve_webhook_urls(cli_values: list[str] | None) -> list[str]:
+    cli_urls = split_webhook_urls(cli_values)
+    if cli_urls:
+        return cli_urls
+
+    env_urls = os.environ.get("FEISHU_WEBHOOK_URLS")
+    if env_urls:
+        return split_webhook_urls([env_urls])
+
+    return split_webhook_urls([os.environ.get("FEISHU_WEBHOOK_URL", "")])
+
+
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Summarize daily paper Markdown notes and send a focused summary to Feishu."
     )
     parser.add_argument("--date", required=True, help="Date folder under papers/, e.g. 2026-05-18.")
     parser.add_argument("--papers-root", default="papers", type=Path)
-    parser.add_argument("--webhook-url", default=os.environ.get("FEISHU_WEBHOOK_URL"))
+    parser.add_argument(
+        "--webhook-url",
+        action="append",
+        dest="webhook_urls",
+        help=(
+            "Feishu custom bot webhook URL. May be passed multiple times; each value may also be "
+            "comma-separated. Defaults to FEISHU_WEBHOOK_URLS, then FEISHU_WEBHOOK_URL."
+        ),
+    )
     parser.add_argument(
         "--lark-report",
         action="append",
@@ -439,19 +466,24 @@ def main(argv: list[str] | None = None) -> int:
         print(summary)
         return 0
 
-    if not args.webhook_url:
-        print("Missing webhook URL. Pass --webhook-url or set FEISHU_WEBHOOK_URL.", file=sys.stderr)
+    webhook_urls = resolve_webhook_urls(args.webhook_urls)
+    if not webhook_urls:
+        print(
+            "Missing webhook URL. Pass --webhook-url or set FEISHU_WEBHOOK_URLS/FEISHU_WEBHOOK_URL.",
+            file=sys.stderr,
+        )
         return 2
 
     chunks = chunk_text(summary, max_chars=args.max_chars)
-    send_feishu_chunks(
-        args.webhook_url,
-        chunks,
-        send_interval=args.send_interval,
-        rate_limit_retries=args.rate_limit_retries,
-    )
+    for webhook_url in webhook_urls:
+        send_feishu_chunks(
+            webhook_url,
+            chunks,
+            send_interval=args.send_interval,
+            rate_limit_retries=args.rate_limit_retries,
+        )
 
-    print(f"Sent {len(chunks)} Feishu message(s) for {args.date}.")
+    print(f"Sent {len(chunks)} Feishu message(s) to {len(webhook_urls)} webhook(s) for {args.date}.")
     return 0
 
 
