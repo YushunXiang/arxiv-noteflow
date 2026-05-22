@@ -409,9 +409,8 @@ def split_webhook_urls(values: Iterable[str] | None) -> list[str]:
 
 
 def resolve_webhook_urls(cli_values: list[str] | None) -> list[str]:
-    cli_urls = split_webhook_urls(cli_values)
-    if cli_urls:
-        return cli_urls
+    if cli_values is not None:
+        return split_webhook_urls(cli_values)
 
     env_urls = os.environ.get("FEISHU_WEBHOOK_URLS")
     if env_urls:

@@ -214,6 +214,7 @@ def test_main_loads_webhook_from_dotenv(
     sent: list[tuple[str, list[str]]] = []
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("FEISHU_WEBHOOK_URL", raising=False)
+    monkeypatch.delenv("FEISHU_WEBHOOK_URLS", raising=False)
     monkeypatch.setattr(
         module,
         "send_feishu_chunks",
@@ -243,6 +244,7 @@ def test_main_sends_to_each_webhook_url(
     sent: list[tuple[str, list[str]]] = []
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("FEISHU_WEBHOOK_URL", raising=False)
+    monkeypatch.delenv("FEISHU_WEBHOOK_URLS", raising=False)
     monkeypatch.setattr(
         module,
         "send_feishu_chunks",
@@ -267,3 +269,117 @@ def test_main_sends_to_each_webhook_url(
         "https://example.test/first",
         "https://example.test/second",
     ]
+
+
+def test_main_sends_to_comma_separated_cli_webhook_urls(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    module = load_script()
+    date_dir = tmp_path / "papers" / "2026-05-18"
+    date_dir.mkdir(parents=True)
+    write_note(
+        date_dir,
+        "vla",
+        "Vision-Language-Action Policy",
+        "2605.10000",
+        "## 简短总结\n- VLA policy for robot manipulation.\n",
+    )
+    sent: list[tuple[str, list[str]]] = []
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("FEISHU_WEBHOOK_URL", raising=False)
+    monkeypatch.delenv("FEISHU_WEBHOOK_URLS", raising=False)
+    monkeypatch.setattr(
+        module,
+        "send_feishu_chunks",
+        lambda webhook_url, chunks, **_kwargs: sent.append((webhook_url, chunks)),
+    )
+
+    result = module.main(
+        [
+            "--date",
+            "2026-05-18",
+            "--webhook-url",
+            "https://example.test/first, https://example.test/second",
+            "--max-chars",
+            "18000",
+        ]
+    )
+
+    assert result == 0
+    assert [url for url, _chunks in sent] == [
+        "https://example.test/first",
+        "https://example.test/second",
+    ]
+
+
+def test_main_loads_webhooks_from_urls_env(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    module = load_script()
+    date_dir = tmp_path / "papers" / "2026-05-18"
+    date_dir.mkdir(parents=True)
+    write_note(
+        date_dir,
+        "vla",
+        "Vision-Language-Action Policy",
+        "2605.10000",
+        "## 简短总结\n- VLA policy for robot manipulation.\n",
+    )
+    sent: list[tuple[str, list[str]]] = []
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("FEISHU_WEBHOOK_URL", raising=False)
+    monkeypatch.setenv(
+        "FEISHU_WEBHOOK_URLS",
+        "https://example.test/first, https://example.test/second",
+    )
+    monkeypatch.setattr(
+        module,
+        "send_feishu_chunks",
+        lambda webhook_url, chunks, **_kwargs: sent.append((webhook_url, chunks)),
+    )
+
+    result = module.main(["--date", "2026-05-18", "--max-chars", "18000"])
+
+    assert result == 0
+    assert [url for url, _chunks in sent] == [
+        "https://example.test/first",
+        "https://example.test/second",
+    ]
+
+
+def test_empty_cli_webhook_url_does_not_fall_back_to_env(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    module = load_script()
+    date_dir = tmp_path / "papers" / "2026-05-18"
+    date_dir.mkdir(parents=True)
+    write_note(
+        date_dir,
+        "vla",
+        "Vision-Language-Action Policy",
+        "2605.10000",
+        "## 简短总结\n- VLA policy for robot manipulation.\n",
+    )
+    sent: list[tuple[str, list[str]]] = []
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("FEISHU_WEBHOOK_URL", "https://example.test/from-env")
+    monkeypatch.setenv("FEISHU_WEBHOOK_URLS", "https://example.test/from-envs")
+    monkeypatch.setattr(
+        module,
+        "send_feishu_chunks",
+        lambda webhook_url, chunks, **_kwargs: sent.append((webhook_url, chunks)),
+    )
+
+    result = module.main(
+        [
+            "--date",
+            "2026-05-18",
+            "--webhook-url",
+            "",
+            "--max-chars",
+            "18000",
+        ]
+    )
+
+    assert result == 2
+    assert sent == []
