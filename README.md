@@ -128,7 +128,12 @@ Then fill in:
 ```dotenv
 LARK_PARENT_FOLDER_TOKEN=
 FEISHU_WEBHOOK_URL=
+FEISHU_WEBHOOK_URLS=
 ```
+
+Use `FEISHU_WEBHOOK_URL` for one custom bot, or `FEISHU_WEBHOOK_URLS` for
+multiple bots as a comma-separated list. Explicit `--webhook-url` arguments take
+precedence over both environment variables.
 
 Do not commit `.env`. It is ignored by `.gitignore`.
 
@@ -162,8 +167,8 @@ The skill uses `arxiv-noteflow` for downloads, writes a deterministic reading
 manifest with `prepare_daily_batch.py`, and follows
 [`references/paper-note-spec.md`](.codex/skills/read-daily-arxiv/references/paper-note-spec.md)
 for note structure and quality checks. For Lark/Feishu sync, configure
-`LARK_PARENT_FOLDER_TOKEN` and `FEISHU_WEBHOOK_URL` in `.env` and make sure
-`lark-cli` is authenticated.
+`LARK_PARENT_FOLDER_TOKEN` and either `FEISHU_WEBHOOK_URL` or
+`FEISHU_WEBHOOK_URLS` in `.env` and make sure `lark-cli` is authenticated.
 
 ## Daily Reading Workflow
 
@@ -230,6 +235,22 @@ uv run python scripts/send_focus_summary_to_feishu.py \
 The summary helper reads `papers/<date>/**/*.md`, prioritizes Long-horizon,
 Egocentric, UMI, and VLA topics, attaches arXiv links, and includes Feishu
 document links when Lark import reports are available.
+
+To send the same summary to multiple custom bots, pass `--webhook-url` multiple
+times or provide a comma-separated list:
+
+```bash
+uv run python scripts/send_focus_summary_to_feishu.py \
+  --date 2026-05-18 \
+  --webhook-url "$FEISHU_RESEARCH_WEBHOOK_URL" \
+  --webhook-url "$FEISHU_TEAM_WEBHOOK_URL"
+```
+
+```bash
+FEISHU_WEBHOOK_URLS="https://example.test/first,https://example.test/second" \
+uv run python scripts/send_focus_summary_to_feishu.py \
+  --date 2026-05-18
+```
 
 Use `--dry-run` to preview without sending:
 
