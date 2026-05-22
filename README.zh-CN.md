@@ -124,7 +124,12 @@ cp example.env .env
 ```dotenv
 LARK_PARENT_FOLDER_TOKEN=
 FEISHU_WEBHOOK_URL=
+FEISHU_WEBHOOK_URLS=
 ```
+
+单个自定义机器人可使用 `FEISHU_WEBHOOK_URL`；多个机器人可使用
+`FEISHU_WEBHOOK_URLS`，并以逗号分隔多个 URL。显式传入的 `--webhook-url`
+参数优先级高于这两个环境变量。
 
 不要提交 `.env`。该文件已被 `.gitignore` 忽略。
 
@@ -157,8 +162,8 @@ Use $read-daily-arxiv to read cs.RO papers for 2026-05-18, sync the generated no
 写出确定性的阅读 manifest，并按照
 [`references/paper-note-spec.md`](.codex/skills/read-daily-arxiv/references/paper-note-spec.md)
 控制笔记结构和质量检查。如果需要同步到 Lark/飞书或发送 webhook，请在 `.env`
-中配置 `LARK_PARENT_FOLDER_TOKEN` 和 `FEISHU_WEBHOOK_URL`，并确保 `lark-cli`
-已完成认证。
+中配置 `LARK_PARENT_FOLDER_TOKEN`，并配置 `FEISHU_WEBHOOK_URL` 或
+`FEISHU_WEBHOOK_URLS`，同时确保 `lark-cli` 已完成认证。
 
 ## 每日阅读工作流
 
@@ -224,6 +229,22 @@ uv run python scripts/send_focus_summary_to_feishu.py \
 
 摘要脚本会读取 `papers/<date>/**/*.md`，优先关注 Long-horizon、Egocentric、
 UMI 和 VLA 方向，附带 arXiv 链接，并在存在 Lark 导入报告时加入对应飞书文档链接。
+
+如果要把同一份摘要发送给多个自定义机器人，可以重复传入 `--webhook-url`，
+也可以使用逗号分隔的 URL 列表：
+
+```bash
+uv run python scripts/send_focus_summary_to_feishu.py \
+  --date 2026-05-18 \
+  --webhook-url "$FEISHU_RESEARCH_WEBHOOK_URL" \
+  --webhook-url "$FEISHU_TEAM_WEBHOOK_URL"
+```
+
+```bash
+FEISHU_WEBHOOK_URLS="https://example.test/first,https://example.test/second" \
+uv run python scripts/send_focus_summary_to_feishu.py \
+  --date 2026-05-18
+```
 
 使用 `--dry-run` 可以只预览、不发送：
 
